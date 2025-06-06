@@ -1,55 +1,49 @@
-Here's a clean and well-structured version of your documentation formatted for a GitHub `README.md`:
-
-````markdown
 # 📸 Thumbnail Generation Service
 
-This guide explains how to integrate the `ThumbnailService` into your GitHub repository, including dependencies, setup, and usage instructions.
+This project provides a `ThumbnailService` for generating thumbnails from images, videos, and documents.
 
 ---
 
 ## ✅ Prerequisites
 
-Before adding this service to your project, ensure the following are installed:
+Ensure the following are installed:
 
-- [x] Java 8+ (JDK)
-- [x] Maven
-- [x] FFmpeg (for video thumbnails)
-- [x] LibreOffice (for document conversion)
-- [x] GitHub account
+- Java 8+ (JDK)
+- Maven
+- FFmpeg (for video thumbnails)
+- LibreOffice (for document conversion)
+- GitHub account
 
 ---
 
 ## 📦 Adding to GitHub
 
-### Step 1: Create a New Repository
+### 1. Create a New Repository
 
-1. Go to GitHub and click **New repository**.
+1. Go to GitHub → **New repository**.
 2. Name it (e.g., `thumbnail-generator-service`).
-3. Choose Public/Private and optionally initialize with a `README.md`.
+3. Choose visibility (Public/Private), optionally initialize with `README.md`.
 4. Click **Create repository**.
 
-### Step 2: Clone the Repository Locally
+### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/thumbnail-generator-service.git
 cd thumbnail-generator-service
-````
 
-### Step 3: Add the Code
-
+```
+### 3. Add the Code
 Create the folder structure:
 
-```
+swift
+Copy
+Edit
 src/main/java/com/techpool/tech/ThumbnailService.java
-```
+Copy your ThumbnailService code into this file.
 
-Copy your `ThumbnailService` code into this file.
-
-### Step 4: Add Dependencies (`pom.xml`)
-
-```xml
-<dependencies>
-    <!-- Spring Boot Starter (if used) -->
+### 4. Add Maven Dependencies (pom.xml)
+   <dependencies>
+    <!-- Spring Boot Starter -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter</artifactId>
@@ -77,117 +71,81 @@ Copy your `ThumbnailService` code into this file.
         <version>0.4.18</version>
     </dependency>
 </dependencies>
-```
 
-### Step 5: Commit & Push
-
-```bash
+### 5. Commit & Push
+bash
+Copy
+Edit
 git add .
 git commit -m "feat: Add ThumbnailService for generating thumbnails"
 git push origin main
-```
-
----
-
-## 🚀 Usage Instructions
-
-### Run as a Spring Boot Component
-
-Inject the service:
-
-```java
+🚀 Usage
+As a Spring Boot Component
+java
+Copy
+Edit
 @Autowired
 private ThumbnailService thumbnailService;
-```
 
-Call the method:
-
-```java
 thumbnailService.processPath(new File("/path/to/files"));
-```
-
-### Run Standalone
-
-```java
+#### As a Standalone Java App
+java
+Copy
+Edit
 public static void main(String[] args) {
     ThumbnailService thumbnailService = new ThumbnailService();
     thumbnailService.processPath(new File("/path/to/files"));
 }
-```
 
----
+### 🗂 Supported File Types
+Type	Formats	Notes
+Images	JPG, PNG, GIF, BMP	Uses Thumbnailator
+Videos	MP4, AVI, MKV, MOV	Requires FFmpeg in PATH
+Documents	PDF, DOC, DOCX, PPT, XLS	Converts to PDF via LibreOffice
+Others	Unsupported files	Generates a default placeholder thumbnail
 
-## 🗂 Supported File Types
+🔧 External Dependencies Setup
+FFmpeg (for Video Thumbnails)
+Linux / macOS
+bash
+Copy
+Edit
+sudo apt install ffmpeg        # Ubuntu/Debian
+brew install ffmpeg            # macOS (Homebrew)
+Windows
+Download from ffmpeg.org
 
-| Type      | Formats                  | Notes                                     |
-| --------- | ------------------------ | ----------------------------------------- |
-| Images    | JPG, PNG, GIF, BMP       | Uses Thumbnailator                        |
-| Videos    | MP4, AVI, MKV, MOV       | Requires FFmpeg in PATH                   |
-| Documents | PDF, DOC, DOCX, PPT, XLS | Converts to PDF first via LibreOffice     |
-| Others    | Any unsupported file     | Generates a default placeholder thumbnail |
+Add to system PATH
 
----
-
-## 🔧 External Dependencies Setup
-
-### FFmpeg (Video Thumbnails)
-
-#### Linux / macOS
-
-```bash
-sudo apt install ffmpeg     # Ubuntu/Debian
-brew install ffmpeg         # macOS with Homebrew
-```
-
-#### Windows
-
-* Download from [ffmpeg.org](https://ffmpeg.org/download.html)
-* Add to system PATH.
-
-### LibreOffice (Document Conversion)
-
-#### Linux / macOS
-
-```bash
+LibreOffice (for Document Conversion)
+Linux / macOS
+bash
+Copy
+Edit
 sudo apt install libreoffice   # Ubuntu/Debian
-brew install libreoffice       # macOS with Homebrew
-```
+brew install libreoffice       # macOS (Homebrew)
+Windows
+Download from libreoffice.org
 
-#### Windows
+Install and ensure soffice is in PATH
 
-* Download from [libreoffice.org](https://www.libreoffice.org/)
-* Install and ensure `soffice` is accessible in your PATH.
+### 🛠 Troubleshooting
+Issue	Solution
+FFmpeg not found	Install FFmpeg and ensure it's in your PATH
+LibreOffice conversion fails	Run soffice --version to verify install
+Password-protected PDFs	Skipped or fallback to text extraction
+Unsupported file formats	Placeholder thumbnail is generated
 
----
+📄 License
+This project is licensed under the MIT License.
 
-## 🛠 Error Handling & Troubleshooting
-
-| Issue                        | Solution                                    |
-| ---------------------------- | ------------------------------------------- |
-| FFmpeg not found             | Install FFmpeg and ensure it's in your PATH |
-| LibreOffice conversion fails | Check if `soffice --version` works          |
-| Password-protected PDFs      | Skipped or fallback to text extraction      |
-| Unsupported files            | Default placeholder thumbnail is generated  |
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**. Be sure to include a `LICENSE` file in your repository.
-
-```text
+text
+Copy
+Edit
 MIT License
 
 Copyright (c) [Year] [Your Name]
 
-Permission is hereby granted, free of charge, to any person obtaining a copy...
-```
-
----
-
-> 📌 Replace `[Year]` and `[Your Name]` in the license section with your details.
-
-```
-
-Let me know if you'd like this embedded directly into a GitHub repo or want additional badges like build status, license, or Java version.
-```
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
