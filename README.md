@@ -28,33 +28,7 @@ This Spring Boot service takes an input **file** or **folder path** (containing 
 - Git (optional, for pushing to GitHub)
 
 ---
-
-### ✅ 2. Dependencies (add to `pom.xml`)
-
-```xml
-<dependencies>
-    <!-- Thumbnailator for image resizing -->
-    <dependency>
-        <groupId>net.coobird</groupId>
-        <artifactId>thumbnailator</artifactId>
-        <version>0.4.14</version>
-    </dependency>
-
-    <!-- Apache Tika for MIME type detection -->
-    <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-core</artifactId>
-        <version>2.9.0</version>
-    </dependency>
-
-    <!-- Spring Boot Starter Web -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-</dependencies>
-
-###✅ 3. FFmpeg Installation
+###✅ 2. FFmpeg Installation
 Download from https://ffmpeg.org/download.html
 
 Extract it and add the ffmpeg/bin folder to your system PATH
@@ -116,3 +90,29 @@ Copy
 Edit
 thumb_dog.jpg.jpg
 You can improve this by cleaning up the filename logic if needed.
+
+### ✅ 3. Dependencies (add to `pom.xml`)
+
+```xml
+<dependencies>
+    <!-- Thumbnailator for image resizing -->
+    <dependency>
+        <groupId>net.coobird</groupId>
+        <artifactId>thumbnailator</artifactId>
+        <version>0.4.14</version>
+    </dependency>
+
+    <!-- Apache Tika for MIME type detection -->
+    <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-core</artifactId>
+        <version>2.9.0</version>
+    </dependency>
+
+    <!-- Spring Boot Starter Web -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+</dependencies> 
+
