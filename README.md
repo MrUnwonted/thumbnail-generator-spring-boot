@@ -28,7 +28,7 @@ This Spring Boot service takes an input **file** or **folder path** (containing 
 - Git (optional, for pushing to GitHub)
 
 ---
-###✅ 2. FFmpeg Installation
+### ✅ 2. FFmpeg Installation
 Download from https://ffmpeg.org/download.html
 
 Extract it and add the ffmpeg/bin folder to your system PATH
