@@ -82,6 +82,21 @@
 			<artifactId>caffeine</artifactId>
 			<version>3.1.8</version> <!-- or latest version -->
 		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-jpeg</artifactId>
+			<version>3.9.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-tiff</artifactId>
+			<version>3.9.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twelvemonkeys.imageio</groupId>
+			<artifactId>imageio-bmp</artifactId>
+			<version>3.9.4</version>
+		</dependency>
 
 		<!-- Apache Tika for MIME type detection -->
 		<dependency>

@@ -1,7 +1,6 @@
 package com.techpool.tech;
 
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.stereotype.Service;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
@@ -38,8 +37,8 @@ public class ThumbnailService {
     private static final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
 
     // Constants for thumbnail generation
-    private static final int THUMBNAIL_WIDTH = 200;
-    private static final int THUMBNAIL_HEIGHT = 200;
+    private static final int THUMBNAIL_WIDTH = 400;
+    private static final int THUMBNAIL_HEIGHT = 400;
     private static final String THUMBNAIL_PREFIX = "thumb_";
     private static final String DEFAULT_THUMBNAIL_TEXT = "No Preview\nAvailable";
     private static final long MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -88,30 +87,40 @@ public class ThumbnailService {
         try {
             validateFileSize(file);
             String type = detectMimeType(file);
-            logger.info("Processing: ", file.getName(), " [", type, "]");
+            logger.info("Detected MIME type for {}: {}", file.getName(), type);
 
-            if (type.startsWith("image")) {
-                generateImageThumbnail(file);
-            } else if (type.startsWith("video")) {
-                generateVideoThumbnail(file);
-            } else if (type.equals("application/pdf")) {
-                generatePdfThumbnail(file);
-            } else if (isSupportedDocument(type)) {
-                generateDocumentThumbnail(file, type);
-            } else if (type.equals("text/csv") || type.equals("application/vnd.ms-excel") || type
-                    .equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-                generateExcelThumbnail(file); // This handles both Excel and CSV
-            } else {
-                generateDefaultThumbnail(file);
+            int attempts = 0;
+            while (attempts < 2) {
+                try {
+                    if (type.startsWith("image")) {
+                        generateImageThumbnail(file);
+                    } else if (type.startsWith("video")) {
+                        generateVideoThumbnail(file);
+                    } else if (type.equals("application/pdf")) {
+                        generatePdfThumbnail(file);
+                    } else if (isSupportedDocument(type)) {
+                        generateDocumentThumbnail(file, type);
+                    } else if (type.equals("text/csv") || type.equals("application/vnd.ms-excel")
+                            || type.equals(
+                                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+                        generateExcelThumbnail(file);
+                    } else {
+                        generateDefaultThumbnail(file);
+                    }
+                    return; // Success
+                } catch (IOException e) {
+                    attempts++;
+                    if (attempts >= 2)
+                        throw e;
+                    logger.warn("Attempt {} failed, retrying...", attempts);
+                }
             }
         } catch (Exception e) {
             logger.error("Failed to generate thumbnail for {}", file.getName(), e);
-            e.printStackTrace();
             try {
                 generateDefaultThumbnail(file);
             } catch (IOException ex) {
-                logger.error("Failed to generate thumbnail for {}", file.getName(), e);
-                ex.printStackTrace();
+                logger.error("Failed to generate default thumbnail for {}", file.getName(), ex);
             }
         }
     }
@@ -128,14 +137,36 @@ public class ThumbnailService {
     }
 
     private void generateImageThumbnail(File file) throws IOException {
-        BufferedImage img = ImageIO.read(file);
-        if (img != null) {
-            BufferedImage thumb =
-                    Thumbnails.of(img).size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT).asBufferedImage();
-            saveThumbnail(thumb, file, "jpg");
-        } else {
-            throw new IOException("Unreadable image: " + file.getName());
+        try {
+            logger.info("Attempting to read image file: {}", file.getAbsolutePath());
+            BufferedImage img = ImageIO.read(file);
+
+            if (img == null) {
+                throw new IOException("Unreadable image - possibly corrupt or unsupported format");
+            }
+
+            logger.debug("Original image dimensions: {}x{}", img.getWidth(), img.getHeight());
+
+            // Determine output format based on input (prefer JPG for photos, PNG for graphics)
+            String outputFormat = shouldUseJpeg(file) ? "jpg" : "png";
+
+            // Use the improved saveThumbnail method
+            saveThumbnail(
+                    Thumbnails.of(img).size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT).asBufferedImage(),
+                    file, outputFormat);
+
+            logger.info("Successfully generated thumbnail for {}", file.getName());
+        } catch (Exception e) {
+            logger.error("Failed to generate thumbnail for {}: {}", file.getAbsolutePath(),
+                    e.getMessage());
+            throw e;
         }
+    }
+
+    private boolean shouldUseJpeg(File file) {
+        String name = file.getName().toLowerCase();
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".tif")
+                || name.endsWith(".tiff") || name.endsWith(".bmp");
     }
 
     private void generateVideoThumbnail(File videoFile) throws IOException {
@@ -493,10 +524,41 @@ public class ThumbnailService {
         return Paths.get(originalFile.getParent(), thumbName);
     }
 
+    // private void saveThumbnail(BufferedImage image, File originalFile, String format)
+    // throws IOException {
+    // Path outputPath = getThumbnailPath(originalFile, format);
+    // ImageIO.write(image, format, outputPath.toFile());
+    // }
     private void saveThumbnail(BufferedImage image, File originalFile, String format)
             throws IOException {
         Path outputPath = getThumbnailPath(originalFile, format);
-        ImageIO.write(image, format, outputPath.toFile());
+
+        // Ensure parent directory exists
+        Files.createDirectories(outputPath.getParent());
+
+        // Try with Thumbnailator first (simpler API)
+        try {
+            Thumbnails.of(image).size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT).outputFormat(format)
+                    .toFile(outputPath.toFile());
+            return;
+        } catch (IOException e) {
+            logger.warn("Thumbnailator failed to write image, falling back to ImageIO");
+        }
+
+        // Fallback to ImageIO with explicit format handling
+        try {
+            if (!ImageIO.write(image, format, outputPath.toFile())) {
+                throw new IOException("No suitable writer found for format: " + format);
+            }
+        } catch (IOException e) {
+            // Final fallback - convert to PNG if JPG fails
+            if (!format.equalsIgnoreCase("png")) {
+                logger.warn("Failed to write as {}, attempting PNG fallback", format);
+                saveThumbnail(image, originalFile, "png");
+            } else {
+                throw e;
+            }
+        }
     }
 
     private String detectMimeType(File file) throws IOException {

@@ -1,7 +1,8 @@
 package com.techpool.tech;
 
 import java.io.File;
-
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,13 +19,17 @@ public class ThumbnailController {
 
     @PostMapping("/generate")
     public ResponseEntity<String> generate(@RequestParam String path) {
-        File input = new File(path);
+        try {
+            // Decode URL and handle spaces properly
+            String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
+            // Convert to Windows-style path if needed
+            decodedPath = decodedPath.replace('/', File.separatorChar);
 
-        if (!input.exists()) {
-            return ResponseEntity.badRequest().body("Path does not exist.");
+            File input = new File(decodedPath);
+            thumbnailService.processPath(input);
+            return ResponseEntity.ok("Thumbnails generated successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
-
-        thumbnailService.processPath(input);
-        return ResponseEntity.ok("Thumbnails generated successfully.");
     }
 }
