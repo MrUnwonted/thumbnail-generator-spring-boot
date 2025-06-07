@@ -69,18 +69,19 @@ public class ThumbnailService {
             logger.info("Generating thumbnail for child: {}", dir.getAbsolutePath());
 
         } catch (Exception e) {
-            // TODO: handle exception
+            logger.error("Failed to generate thumbnail for {}", dir.getName(), e);
+            processDirectory(dir); // just call it again; no need to catch IOException
         }
     }
 
-    // private void validateFilePath(File file) throws IOException {
-    //     Path path = file.toPath().toAbsolutePath().normalize();
-    //     Path allowedBase = Paths.get(System.getProperty("user.home")).toAbsolutePath();
+    private void validateFilePath(File file) throws IOException {
+        Path path = file.toPath().toAbsolutePath().normalize();
+        Path allowedBase = Paths.get(System.getProperty("user.home")).toAbsolutePath();
 
-    //     if (!path.startsWith(allowedBase)) {
-    //         throw new IOException("Access denied to path: " + path);
-    //     }
-    // }
+        if (!path.startsWith(allowedBase)) {
+            throw new IOException("Access denied to path: " + path);
+        }
+    }
 
     // Add validation method
     private void validateFileSize(File file) throws IOException {
