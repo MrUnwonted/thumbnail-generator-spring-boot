@@ -7,15 +7,24 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ThumbnailService {
@@ -52,6 +61,9 @@ public class ThumbnailService {
                 generatePdfThumbnail(file);
             } else if (isSupportedDocument(type)) {
                 generateDocumentThumbnail(file, type);
+            } else if (type.equals("text/csv") || type.equals("application/vnd.ms-excel") ||
+                    type.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+                generateExcelThumbnail(file); // This handles both Excel and CSV
             } else {
                 generateDefaultThumbnail(file);
             }
@@ -95,7 +107,6 @@ public class ThumbnailService {
                 "ffmpeg", "-i", videoFile.getAbsolutePath(),
                 "-ss", "00:00:01.000", "-vframes", "1", output);
         pb.inheritIO();
-
         try {
             Process process = pb.start();
             int exitCode = process.waitFor();
@@ -103,7 +114,6 @@ public class ThumbnailService {
             if (exitCode != 0) {
                 throw new IOException("FFmpeg failed with exit code " + exitCode);
             }
-
             // Verify the thumbnail was created
             if (!Files.exists(Paths.get(output))) {
                 throw new IOException("FFmpeg didn't create the thumbnail file");
@@ -252,6 +262,174 @@ public class ThumbnailService {
         }
     }
 
+    private void generateExcelThumbnail(File file) throws IOException {
+        try {
+            List<String> previewLines;
+            if (file.getName().toLowerCase().endsWith(".csv")) {
+                previewLines = readCsvPreview(file, 3);
+            } else {
+                previewLines = readExcelPreview(file, 3); // You'll need to implement this
+            }
+            BufferedImage image = createDataPreviewImage(file.getName(), previewLines);
+            saveThumbnail(image, file, "jpg");
+        } catch (Exception e) {
+            generateDefaultThumbnail(file);
+        }
+    }
+
+    private List<String> readExcelPreview(File excelFile, int maxLines) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(excelFile)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Add header
+            Row headerRow = sheet.getRow(0);
+            if (headerRow != null) {
+                lines.add(getExcelRowAsString(headerRow));
+            }
+
+            // Add data rows
+            for (int i = 1; i <= maxLines && i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row != null) {
+                    lines.add(getExcelRowAsString(row));
+                }
+            }
+        }
+        return lines;
+    }
+
+    private String getExcelRowAsString(Row row) {
+        StringBuilder sb = new StringBuilder();
+        for (Cell cell : row) {
+            switch (cell.getCellType()) {
+                case STRING:
+                    sb.append(cell.getStringCellValue());
+                    break;
+                case NUMERIC:
+                    sb.append(cell.getNumericCellValue());
+                    break;
+                case BOOLEAN:
+                    sb.append(cell.getBooleanCellValue());
+                    break;
+                default:
+                    sb.append(" ");
+            }
+            sb.append(" ");
+        }
+        return cleanCsvLine(sb.toString());
+    }
+
+    private String readSpreadsheetPreview(File file) throws IOException {
+        StringBuilder preview = new StringBuilder();
+        String firstLine;
+
+        // Simple CSV reader (for both CSV and Excel)
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            // Read header
+            firstLine = br.readLine();
+            if (firstLine != null) {
+                preview.append("Columns: ").append(firstLine.split(",").length).append("\n");
+                preview.append(truncateLine(firstLine)).append("\n...\n");
+            }
+
+            // Read first 3 data rows
+            for (int i = 0; i < 3; i++) {
+                String line = br.readLine();
+                if (line == null)
+                    break;
+                preview.append(truncateLine(line)).append("\n");
+            }
+        }
+
+        return preview.toString();
+    }
+
+    private String truncateLine(String line) {
+        return line.length() > 50 ? line.substring(0, 47) + "..." : line;
+    }
+
+    private void generateCsvThumbnail(File csvFile) throws IOException {
+        try {
+            List<String> previewLines = readCsvPreview(csvFile, 3); // Read header + 3 lines
+            BufferedImage image = createDataPreviewImage(csvFile.getName(), previewLines);
+            saveThumbnail(image, csvFile, "jpg");
+        } catch (Exception e) {
+            generateDefaultThumbnail(csvFile); // Fallback if anything fails
+        }
+    }
+
+    private List<String> readCsvPreview(File csvFile, int maxLines) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+            String line;
+            while ((line = br.readLine()) != null && lines.size() < maxLines) {
+                lines.add(cleanCsvLine(line));
+            }
+        }
+        return lines;
+    }
+
+    private String cleanCsvLine(String line) {
+        // 1. Trim and limit length
+        line = line.trim();
+        if (line.length() > 50) {
+            line = line.substring(0, 47) + "...";
+        }
+
+        // 2. Remove special characters that break rendering
+        line = line.replaceAll("[^\\x20-\\x7E]", "");
+
+        // 3. Replace multiple spaces with single space
+        return line.replaceAll("\\s+", " ");
+    }
+
+    private BufferedImage createDataPreviewImage(String filename, List<String> lines) {
+        BufferedImage image = new BufferedImage(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+
+        // Set anti-aliasing for better text quality
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Draw background
+        g.setColor(new Color(240, 240, 240)); // Light gray
+        g.fillRect(0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+
+        // Draw header
+        g.setColor(new Color(0, 82, 165)); // Dark blue
+        g.fillRect(0, 0, THUMBNAIL_WIDTH, 25);
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 12));
+        g.drawString(truncateFilename(filename), 5, 18);
+
+        // Draw data rows
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Courier New", Font.PLAIN, 10));
+
+        int y = 40;
+        for (String line : lines) {
+            if (y > THUMBNAIL_HEIGHT - 15)
+                break;
+            g.drawString(line, 5, y);
+            y += 15;
+        }
+
+        // Draw footer
+        g.setColor(Color.GRAY);
+        g.setFont(new Font("Arial", Font.PLAIN, 10));
+        g.drawString(lines.size() + " rows shown", 5, THUMBNAIL_HEIGHT - 5);
+
+        g.dispose();
+        return image;
+    }
+
+    private String truncateFilename(String filename) {
+        if (filename.length() > 20) {
+            return filename.substring(0, 17) + "...";
+        }
+        return filename;
+    }
+
     private void generateDefaultThumbnail(File file) throws IOException {
         // Create an image with file icon and name
         BufferedImage image = new BufferedImage(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, BufferedImage.TYPE_INT_RGB);
@@ -284,15 +462,12 @@ public class ThumbnailService {
             }
             name = name + "...";
         }
-
         graphics.drawString(name, (THUMBNAIL_WIDTH - metrics.stringWidth(name)) / 2, THUMBNAIL_HEIGHT * 3 / 4);
-
         // Draw "No Preview" text
         graphics.setFont(new Font("Arial", Font.ITALIC, 12));
         String noPreview = DEFAULT_THUMBNAIL_TEXT;
         int textWidth = metrics.stringWidth(noPreview);
         graphics.drawString(noPreview, (THUMBNAIL_WIDTH - textWidth) / 2, THUMBNAIL_HEIGHT * 4 / 5);
-
         graphics.dispose();
         saveThumbnail(image, file, "jpg");
     }
