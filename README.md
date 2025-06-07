@@ -1,118 +1,151 @@
-# 🖼️ Thumbnail Generator – Spring Boot Service
+# 📸 Thumbnail Generation Service
 
-This Spring Boot service takes an input **file** or **folder path** (containing images or videos) and generates **200x200 JPEG thumbnails**.
-
-- 📷 **Images** → Resized using [Thumbnailator](https://github.com/coobird/thumbnailator)
-- 🎥 **Videos** → Frame extracted using [FFmpeg](https://ffmpeg.org/)
-- 🧠 **File Type Detection** → Done via [Apache Tika](https://tika.apache.org/)
+This project provides a `ThumbnailService` for generating thumbnails from images, videos, and documents.
 
 ---
 
-## 📌 Features
+## ✅ Prerequisites
 
-- Supports both images and video files.
-- Automatically detects MIME types.
-- Uses external `ffmpeg` for high-quality video thumbnail generation.
-- Simple HTTP API to trigger processing.
-- Generates thumbnails in the same directory with `thumb_` prefix.
+Ensure the following are installed:
 
----
-
-## 🛠️ Project Setup
-
-### ✅ 1. Prerequisites
-
-- Java 17+
+- Java 8+ (JDK)
 - Maven
-- FFmpeg (installed and added to system PATH)
-- Git (optional, for pushing to GitHub)
+- FFmpeg (for video thumbnails)
+- LibreOffice (for document conversion)
+- GitHub account
 
 ---
-### ✅ 2. FFmpeg Installation
-Download from https://ffmpeg.org/download.html
 
-Extract it and add the ffmpeg/bin folder to your system PATH
+## 📦 Adding to GitHub
 
-Test it:
+### 1. Create a New Repository
 
-bash
+1. Go to GitHub → **New repository**.
+2. Name it (e.g., `thumbnail-generator-service`).
+3. Choose visibility (Public/Private), optionally initialize with `README.md`.
+4. Click **Create repository**.
+
+### 2. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/thumbnail-generator-service.git
+cd thumbnail-generator-service
+
+```
+### 3. Add the Code
+Create the folder structure:
+
+swift
 Copy
 Edit
-ffmpeg -version
-🧩 Code Structure
-bash
-Copy
-Edit
-src/
-├── main/java/com/techpool/tech/
-│   ├── ThumbnailController.java   # REST endpoint
-│   └── ThumbnailService.java      # Core logic
-└── resources/
-    └── application.properties
-🚀 Run the Application
-Run the application from the terminal:
+src/main/java/com/techpool/tech/ThumbnailService.java
+Copy your ThumbnailService code into this file.
 
-bash
-Copy
-Edit
-mvn spring-boot:run
-Once started, it will be available at:
-
-arduino
-Copy
-Edit
-http://localhost:8080
-🧪 API Usage
-📤 Endpoint
-bash
-Copy
-Edit
-POST /api/thumbnail/generate?path={full_path_to_file_or_folder}
-📌 Example Request using cURL:
-bash
-Copy
-Edit
-curl -X POST "http://localhost:8080/api/thumbnail/generate?path=C:\Users\YourName\Videos"
-✅ Response
-200 OK – Thumbnails generated
-
-400 Bad Request – Invalid or missing path
-
-📁 Output Example
-For input file:
-
-Copy
-Edit
-dog.jpg
-The service will generate:
-
-Copy
-Edit
-thumb_dog.jpg.jpg
-You can improve this by cleaning up the filename logic if needed.
-
-### ✅ 3. Dependencies (add to `pom.xml`)
-
-```xml
-<dependencies>
-    <!-- Thumbnailator for image resizing -->
+### 4. Add Maven Dependencies (pom.xml)
+   <dependencies>
+    <!-- Spring Boot Starter -->
     <dependency>
-        <groupId>net.coobird</groupId>
-        <artifactId>thumbnailator</artifactId>
-        <version>0.4.14</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+        <version>2.7.0</version>
     </dependency>
 
-    <!-- Apache Tika for MIME type detection -->
+    <!-- Apache Tika (MIME detection) -->
     <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-core</artifactId>
-        <version>2.9.0</version>
+        <version>2.4.1</version>
     </dependency>
 
-    <!-- Spring Boot Starter Web -->
+    <!-- PDFBox (PDF rendering) -->
     <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>2.0.27</version>
     </dependency>
-</dependencies> 
 
+    <!-- Thumbnailator (Image resizing) -->
+    <dependency>
+        <groupId>net.coobird</groupId>
+        <artifactId>thumbnailator</artifactId>
+        <version>0.4.18</version>
+    </dependency>
+</dependencies>
+
+### 5. Commit & Push
+bash
+Copy
+Edit
+git add .
+git commit -m "feat: Add ThumbnailService for generating thumbnails"
+git push origin main
+🚀 Usage
+As a Spring Boot Component
+java
+Copy
+Edit
+@Autowired
+private ThumbnailService thumbnailService;
+
+thumbnailService.processPath(new File("/path/to/files"));
+#### As a Standalone Java App
+java
+Copy
+Edit
+public static void main(String[] args) {
+    ThumbnailService thumbnailService = new ThumbnailService();
+    thumbnailService.processPath(new File("/path/to/files"));
+}
+
+### 🗂 Supported File Types
+Type	Formats	Notes
+Images	JPG, PNG, GIF, BMP	Uses Thumbnailator
+Videos	MP4, AVI, MKV, MOV	Requires FFmpeg in PATH
+Documents	PDF, DOC, DOCX, PPT, XLS	Converts to PDF via LibreOffice
+Others	Unsupported files	Generates a default placeholder thumbnail
+
+🔧 External Dependencies Setup
+FFmpeg (for Video Thumbnails)
+Linux / macOS
+bash
+Copy
+Edit
+sudo apt install ffmpeg        # Ubuntu/Debian
+brew install ffmpeg            # macOS (Homebrew)
+Windows
+Download from ffmpeg.org
+
+Add to system PATH
+
+LibreOffice (for Document Conversion)
+Linux / macOS
+bash
+Copy
+Edit
+sudo apt install libreoffice   # Ubuntu/Debian
+brew install libreoffice       # macOS (Homebrew)
+Windows
+Download from libreoffice.org
+
+Install and ensure soffice is in PATH
+
+### 🛠 Troubleshooting
+Issue	Solution
+FFmpeg not found	Install FFmpeg and ensure it's in your PATH
+LibreOffice conversion fails	Run soffice --version to verify install
+Password-protected PDFs	Skipped or fallback to text extraction
+Unsupported file formats	Placeholder thumbnail is generated
+
+📄 License
+This project is licensed under the MIT License.
+
+text
+Copy
+Edit
+MIT License
+
+Copyright (c) [Year] [Your Name]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
