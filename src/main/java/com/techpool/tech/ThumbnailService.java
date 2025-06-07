@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@EnableCaching
 public class ThumbnailService {
     private static final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
 
@@ -53,11 +52,12 @@ public class ThumbnailService {
             validateFileSize(file);
             if (file.isFile()) {
                 generateThumbnail(file);
+                logger.info("Generating thumbnail for: {}", file.getAbsolutePath());
             } else {
                 processDirectory(file);
             }
         } catch (IOException e) {
-            logger.error("Security violation: ", e.getMessage());
+            logger.error("Security violation for file " + file.getAbsolutePath(), e);
         }
     }
 
@@ -70,7 +70,7 @@ public class ThumbnailService {
 
     private void validateFilePath(File file) throws IOException {
         Path path = file.toPath().toAbsolutePath().normalize();
-        Path allowedBase = Paths.get("/allowed/base/path").toAbsolutePath(); // Configure this
+        Path allowedBase = Paths.get(System.getProperty("user.home")).toAbsolutePath();
 
         if (!path.startsWith(allowedBase)) {
             throw new IOException("Access denied to path: " + path);
