@@ -47,7 +47,6 @@ public class ThumbnailService {
     @Cacheable(value = "thumbnails", key = "#file.absolutePath")
     public void processPath(File file) {
         try {
-            validateFilePath(file);
             validateFileSize(file);
             if (file.isFile()) {
                 generateThumbnail(file);
@@ -61,20 +60,27 @@ public class ThumbnailService {
     }
 
     private void processDirectory(File dir) {
-        File[] children = dir.listFiles();
-        if (children != null) {
-            Arrays.stream(children).parallel().forEach(this::processPath);
+        try {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                Arrays.stream(children).parallel().forEach(this::processPath);
+            }
+            logger.info("Found Directory, Moving inside");
+            logger.info("Generating thumbnail for child: {}", dir.getAbsolutePath());
+
+        } catch (Exception e) {
+            // TODO: handle exception
         }
     }
 
-    private void validateFilePath(File file) throws IOException {
-        Path path = file.toPath().toAbsolutePath().normalize();
-        Path allowedBase = Paths.get(System.getProperty("user.home")).toAbsolutePath();
+    // private void validateFilePath(File file) throws IOException {
+    //     Path path = file.toPath().toAbsolutePath().normalize();
+    //     Path allowedBase = Paths.get(System.getProperty("user.home")).toAbsolutePath();
 
-        if (!path.startsWith(allowedBase)) {
-            throw new IOException("Access denied to path: " + path);
-        }
-    }
+    //     if (!path.startsWith(allowedBase)) {
+    //         throw new IOException("Access denied to path: " + path);
+    //     }
+    // }
 
     // Add validation method
     private void validateFileSize(File file) throws IOException {
