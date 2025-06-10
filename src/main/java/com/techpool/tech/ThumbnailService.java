@@ -132,6 +132,10 @@ public class ThumbnailService {
         }
     }
 
+    private String detectMimeType(File file) throws IOException {
+        return new Tika().detect(file);
+    }
+
     private boolean isSupportedDocument(String mimeType) {
         return mimeType.equals("application/pdf") || mimeType.equals("application/msword")
                 || mimeType.equals(
@@ -196,6 +200,19 @@ public class ThumbnailService {
             Thread.currentThread().interrupt(); // Restore the interrupted status
             throw new IOException("Video thumbnail generation was interrupted", e);
         }
+    }
+
+    private Path getThumbnailPath(File originalFile, String extension) {
+        // Get filename without extension
+        String baseName = originalFile.getName();
+        baseName = baseName.replaceAll("[^a-zA-Z0-9.-]", "_");
+        int dotIndex = baseName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            baseName = baseName.substring(0, dotIndex);
+        }
+        // Construct thumbnail name
+        String thumbName = THUMBNAIL_PREFIX + baseName + "." + extension;
+        return Paths.get(originalFile.getParent(), thumbName);
     }
 
     private void generatePdfThumbnail(File pdfFile) throws IOException {
@@ -340,7 +357,7 @@ public class ThumbnailService {
             if (file.getName().toLowerCase().endsWith(".csv")) {
                 previewLines = readCsvPreview(file, 3);
             } else {
-                previewLines = readExcelPreview(file, 3); // You'll need to implement this
+                previewLines = readExcelPreview(file, 3);
             }
             BufferedImage image = createDataPreviewImage(file.getName(), previewLines);
             saveThumbnail(image, file, "jpg");
@@ -526,11 +543,6 @@ public class ThumbnailService {
         saveThumbnail(image, file, "jpg");
     }
 
-    private Path getThumbnailPath(File originalFile, String extension) {
-        String thumbName = THUMBNAIL_PREFIX + originalFile.getName() + "." + extension;
-        return Paths.get(originalFile.getParent(), thumbName);
-    }
-
     // private void saveThumbnail(BufferedImage image, File originalFile, String format)
     // throws IOException {
     // Path outputPath = getThumbnailPath(originalFile, format);
@@ -568,7 +580,4 @@ public class ThumbnailService {
         }
     }
 
-    private String detectMimeType(File file) throws IOException {
-        return new Tika().detect(file);
-    }
 }
