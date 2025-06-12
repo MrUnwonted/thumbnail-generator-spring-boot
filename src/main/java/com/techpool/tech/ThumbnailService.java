@@ -1,5 +1,6 @@
 package com.techpool.tech;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import fr.opensagres.poi.xwpf.converter.pdf.PdfConverter;
@@ -42,8 +43,10 @@ public class ThumbnailService {
     private static final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
 
     // Constants for thumbnail generation
-    private static final int THUMBNAIL_WIDTH = 400;
-    private static final int THUMBNAIL_HEIGHT = 600;
+    @Value("${thumbnail.width}")
+    private int THUMBNAIL_WIDTH;
+    @Value("${thumbnail.height}")
+    private int THUMBNAIL_HEIGHT;
     private static final String THUMBNAIL_PREFIX = "thumb_";
     private static final String DEFAULT_THUMBNAIL_TEXT = "No Preview\nAvailable";
     private static final long MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
